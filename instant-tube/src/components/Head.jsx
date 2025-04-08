@@ -1,18 +1,24 @@
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { toggleMenu } from "../utils/appSlice";
 import { useEffect, useState } from "react";
 import { YOTUBE_SEARCH_API } from "../utils/constants";
 import { Search } from "lucide-react";
+import { cacheResults } from "../utils/searchSlice";
 
 const Head = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const dispatch = useDispatch();
+  const searchCache = useSelector((store) => store.search);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      getSearchSuggestions();
+      if (searchCache[searchQuery]) {
+        setSuggestions(searchCache[searchQuery]);
+      } else {
+        getSearchSuggestions();
+      }
     }, 200);
 
     return () => clearTimeout(timer);
@@ -22,6 +28,7 @@ const Head = () => {
     const data = await fetch(YOTUBE_SEARCH_API + searchQuery);
     const response = await data.json();
     setSuggestions(response[1]);
+    dispatch(cacheResults({ [searchQuery]: response[1] }));
   };
 
   const toggleMenuHandler = () => {
